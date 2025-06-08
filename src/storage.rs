@@ -1,5 +1,6 @@
 use crate::{
     resp::RESP,
+    set::{parse_set_arguments, KeyExipry, KeyExistence, SetArgs},
     storage_result::{StorageError, StorageResult},
 };
 use std::{
@@ -15,7 +16,7 @@ pub enum StorageValue {
 #[derive(Debug)]
 pub struct StorageData {
     pub value: StorageValue,
-    pub creation_time: SystemTime,
+    // pub creation_time: SystemTime,
     pub expiry: Option<Duration>,
 }
 
@@ -35,7 +36,7 @@ impl From<String> for StorageData {
     fn from(s: String) -> StorageData {
         StorageData {
             value: StorageValue::String(s),
-            creation_time: SystemTime::now(),
+            // creation_time: SystemTime::now(),
             expiry: None,
         }
     }
@@ -100,10 +101,13 @@ impl Storage {
     }
 
     fn command_set(&mut self, command: &Vec<String>) -> StorageResult<RESP> {
-        if command.len() != 3 {
+        if command.len() < 3 {
             return Err(StorageError::CommandSyntaxError(command.join(" ")));
         }
-        let output = self.set(command[1].clone(), command[2].clone());
+        let key = command[1].clone();
+        let value = command[2].clone();
+        let args = parse_set_arguments(&command[3..].to_vec())?;
+        let output = self.set(key, value, args);
         Ok(RESP::SimpleString(output.unwrap()))
     }
 
@@ -119,16 +123,56 @@ impl Storage {
         }
     }
 
-    fn set(&mut self, key: String, value: String) -> StorageResult<String> {
-        self.store.insert(key, StorageData::from(value));
-        Ok(String::from("OK"))
+    fn set(&mut self, key: String, value: String, args: SetArgs) -> StorageResult<String> {
+        let mut data = StorageData::from(value);
+        let mut should_insert = true;
+
+        let key_present = match self.store.get(&key) {
+            None => false,
+            _ => true,
+        };
+
+        if let Some(value) = args.existence {
+            match value {
+                KeyExistence::NX => {
+                    // set if not exists
+                    should_insert = !key_present;
+                }
+                KeyExistence::XX => {
+                    // set if exists
+                    should_insert = key_present;
+                }
+            }
+        }
+
+        if let Some(value) = args.expiry {
+            let expiry = match value {
+                KeyExipry::EX(v) => Duration::from_secs(v),
+                KeyExipry::PX(v) => Duration::from_millis(v),
+            };
+            data.add_expiry(expiry);
+            self.expiry
+                .insert(key.clone(), SystemTime::now().checked_add(expiry).unwrap());
+        }
+        if should_insert {
+            self.store.insert(key, data);
+            return Ok(String::from("OK"));
+        }
+        Ok(format!("Key is present {}", key_present))
     }
 
     fn get(&mut self, key: String) -> StorageResult<Option<String>> {
+        if let Some(&expiry) = self.expiry.get(&key) {
+            if SystemTime::now() >= expiry {
+                self.expiry.remove(&key);
+                self.store.remove(&key);
+                return Ok(None);
+            }
+        }
         match self.store.get(&key) {
             Some(StorageData {
                 value: StorageValue::String(v),
-                creation_time: _,
+                // creation_time: _,
                 expiry: _,
             }) => return Ok(Some(v.to_owned())),
             None => return Ok(None),
@@ -173,7 +217,7 @@ mod tests {
         let mut storage: Storage = Storage::new();
         let avalue = StorageData::from(String::from("avalue"));
         let output = storage
-            .set(String::from("akey"), String::from("avalue"))
+            .set(String::from("akey"), String::from("avalue"), SetArgs::new())
             .unwrap();
         assert_eq!(output, String::from("OK"));
         assert_eq!(storage.store.len(), 1);
@@ -230,7 +274,7 @@ mod tests {
     fn test_expire_keys() {
         let mut storage: Storage = Storage::new();
         storage
-            .set(String::from("akey"), String::from("avalue"))
+            .set(String::from("akey"), String::from("avalue"), SetArgs::new())
             .unwrap();
         storage.expiry.insert(
             String::from("akey"),
@@ -244,7 +288,7 @@ mod tests {
         let mut storage: Storage = Storage::new();
         storage.set_active_expiry(false);
         storage
-            .set(String::from("akey"), String::from("avalue"))
+            .set(String::from("akey"), String::from("avalue"), SetArgs::new())
             .unwrap();
         storage.expiry.insert(
             String::from("akey"),

@@ -9,4 +9,8 @@ Sider is the Rust implementation of the Redis server. It is designed to be a hig
 - PING
 - ECHO
 - SET
+  - NX
+  - XX
+  - EX
+  - PX
 - GET

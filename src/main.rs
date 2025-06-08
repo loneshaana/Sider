@@ -47,6 +47,7 @@ async fn handle_connection(mut stream: TcpStream, storage: Arc<Mutex<Storage>>) 
         match stream.read(&mut buffer).await {
             Ok(size) if size != 0 => {
                 let mut index = 0;
+
                 let request = match bytes_to_resp(&buffer[..size].to_vec(), &mut index) {
                     Ok(v) => v,
                     Err(e) => {
@@ -54,11 +55,11 @@ async fn handle_connection(mut stream: TcpStream, storage: Arc<Mutex<Storage>>) 
                         return;
                     }
                 };
-                eprint!("request {:?} \r\n", request);
+                eprintln!("request {:?}", request);
                 let response = match process_request(request, storage.clone()) {
                     Ok(v) => v,
                     Err(e) => {
-                        eprint!("Error parsing command :{} \r\n", e);
+                        eprintln!("Error parsing command :{}", e);
                         return;
                     }
                 };
@@ -67,11 +68,11 @@ async fn handle_connection(mut stream: TcpStream, storage: Arc<Mutex<Storage>>) 
                 }
             }
             Ok(_) => {
-                println!("Connection Closed");
+                eprintln!("Connection Closed");
                 break;
             }
             Err(e) => {
-                println!("err ={}", e);
+                eprintln!("err ={}", e);
                 break;
             }
         }
@@ -80,6 +81,7 @@ async fn handle_connection(mut stream: TcpStream, storage: Arc<Mutex<Storage>>) 
 mod resp;
 mod resp_result;
 mod server;
+mod set;
 mod storage;
 mod storage_result;
 /*
