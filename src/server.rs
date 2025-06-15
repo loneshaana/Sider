@@ -3,11 +3,12 @@ use std::time::Duration;
 use tokio::sync::mpsc;
 
 use crate::{
+    commands::{echo, get, ping, set},
     connection::ConnectionMessage,
     request::Request,
     resp::RESP,
     server_result::{ServerError, ServerValue},
-    storage::Storage,
+    storage::{self, Storage},
 };
 
 pub struct Server {
@@ -75,28 +76,24 @@ pub async fn process_request(request: Request, server: &mut Server) {
             }
         }
     }
-
-    let storage = match server.storage.as_mut() {
-        Some(storage) => storage,
-        None => {
-            request.error(ServerError::StorageNotInitialized).await;
-            return;
+    let command_name = command[0].to_lowercase();
+    match command_name.as_str() {
+        "echo" => {
+            echo::command(server, &request, &command).await;
         }
-    };
-
-    let response = storage.process_command(&command);
-    match response {
-        Ok(v) => {
+        "get" => {
+            get::command(server, &request, &command).await;
+        }
+        "ping" => {
+            ping::command(server, &request, &command).await;
+        }
+        "set" => set::command(server, &request, &command).await,
+        _ => {
             request
-                .sender
-                .send(crate::server_result::ServerMessage::Data(
-                    ServerValue::RESP(v),
-                ))
-                .await
-                .unwrap();
+                .error(ServerError::CommandNotAvailable(command[0].clone()))
+                .await;
         }
-        Err(e) => (),
-    };
+    }
 }
 
 #[cfg(test)]

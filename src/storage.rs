@@ -1,11 +1,11 @@
-use crate::{
-    resp::RESP,
-    set::{parse_set_arguments, KeyExipry, KeyExistence, SetArgs},
-    storage_result::{StorageError, StorageResult},
-};
 use std::{
     collections::HashMap,
     time::{Duration, SystemTime},
+};
+
+use crate::{
+    set::{KeyExipry, KeyExistence, SetArgs},
+    storage_result::StorageResult,
 };
 
 #[derive(Debug, PartialEq)]
@@ -82,48 +82,7 @@ impl Storage {
         }
     }
 
-    pub fn process_command(&mut self, command: &Vec<String>) -> StorageResult<RESP> {
-        match command[0].to_lowercase().as_str() {
-            "ping" => self.command_ping(&command),
-            "echo" => self.command_echo(&command),
-            "get" => self.command_get(&command),
-            "set" => self.command_set(&command),
-            _ => Err(StorageError::CommandNotAvailable(command[0].clone())),
-        }
-    }
-
-    fn command_ping(&self, _: &Vec<String>) -> StorageResult<RESP> {
-        Ok(RESP::SimpleString("PONG".to_string()))
-    }
-
-    fn command_echo(&self, command: &Vec<String>) -> StorageResult<RESP> {
-        Ok(RESP::BulkString(command[1].clone()))
-    }
-
-    fn command_set(&mut self, command: &Vec<String>) -> StorageResult<RESP> {
-        if command.len() < 3 {
-            return Err(StorageError::CommandSyntaxError(command.join(" ")));
-        }
-        let key = command[1].clone();
-        let value = command[2].clone();
-        let args = parse_set_arguments(&command[3..].to_vec())?;
-        let output = self.set(key, value, args);
-        Ok(RESP::SimpleString(output.unwrap()))
-    }
-
-    fn command_get(&mut self, command: &Vec<String>) -> StorageResult<RESP> {
-        if command.len() != 2 {
-            return Err(StorageError::CommandSyntaxError(command.join(" ")));
-        }
-        let output = self.get(command[1].clone());
-        match output {
-            Ok(Some(v)) => Ok(RESP::BulkString(v)),
-            Ok(None) => Ok(RESP::Null),
-            Err(_) => Err(StorageError::CommandInternalError(command.join(" "))),
-        }
-    }
-
-    fn set(&mut self, key: String, value: String, args: SetArgs) -> StorageResult<String> {
+    pub fn set(&mut self, key: String, value: String, args: SetArgs) -> StorageResult<String> {
         let mut data = StorageData::from(value);
         let mut should_insert = true;
 
@@ -161,7 +120,7 @@ impl Storage {
         Ok(format!("Key is present {}", key_present))
     }
 
-    fn get(&mut self, key: String) -> StorageResult<Option<String>> {
+    pub fn get(&mut self, key: String) -> StorageResult<Option<String>> {
         if let Some(&expiry) = self.expiry.get(&key) {
             if SystemTime::now() >= expiry {
                 self.expiry.remove(&key);
@@ -189,27 +148,6 @@ mod tests {
         assert_eq!(storage.expiry.len(), 0);
         assert_eq!(storage.expiry, HashMap::<String, SystemTime>::new());
         assert!(storage.active_expiry);
-    }
-    #[test]
-    fn test_command_ping() {
-        let command = vec![String::from("ping")];
-        let storage: Storage = Storage::new();
-        let output = storage.command_ping(&command).unwrap();
-        assert_eq!(output, RESP::SimpleString(String::from("PONG")));
-    }
-    #[test]
-    fn test_command_ping_uppercase() {
-        let command = vec![String::from("PING")];
-        let storage: Storage = Storage::new();
-        let output = storage.command_ping(&command).unwrap();
-        assert_eq!(output, RESP::SimpleString(String::from("PONG")));
-    }
-    #[test]
-    fn test_command_echo() {
-        let command = vec![String::from("echo"), String::from("42")];
-        let storage: Storage = Storage::new();
-        let output = storage.command_echo(&command).unwrap();
-        assert_eq!(output, RESP::BulkString(String::from("42")));
     }
 
     #[test]
@@ -243,31 +181,6 @@ mod tests {
         let result = storage.get(String::from("akey")).unwrap();
         assert_eq!(storage.store.len(), 0);
         assert_eq!(result, None);
-    }
-
-    #[test]
-    fn test_process_command_set() {
-        let mut storage: Storage = Storage::new();
-        let command = vec![
-            String::from("set"),
-            String::from("key"),
-            String::from("value"),
-        ];
-        let output = storage.process_command(&command).unwrap();
-        assert_eq!(output, RESP::SimpleString(String::from("OK")));
-        assert_eq!(storage.store.len(), 1);
-    }
-    #[test]
-    fn test_process_command_get() {
-        let mut storage: Storage = Storage::new();
-        storage.store.insert(
-            String::from("akey"),
-            StorageData::from(String::from("avalue")),
-        );
-        let command = vec![String::from("get"), String::from("akey")];
-        let output = storage.process_command(&command).unwrap();
-        assert_eq!(output, RESP::BulkString(String::from("avalue")));
-        assert_eq!(storage.store.len(), 1);
     }
 
     #[test]

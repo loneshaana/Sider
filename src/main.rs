@@ -19,6 +19,7 @@ async fn main() -> std::io::Result<()> {
     Ok(())
 }
 
+mod commands;
 mod connection;
 mod request;
 mod resp;
