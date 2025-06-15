@@ -16,7 +16,7 @@ pub enum StorageValue {
 #[derive(Debug)]
 pub struct StorageData {
     pub value: StorageValue,
-    // pub creation_time: SystemTime,
+    pub creation_time: SystemTime,
     pub expiry: Option<Duration>,
 }
 
@@ -36,7 +36,7 @@ impl From<String> for StorageData {
     fn from(s: String) -> StorageData {
         StorageData {
             value: StorageValue::String(s),
-            // creation_time: SystemTime::now(),
+            creation_time: SystemTime::now(),
             expiry: None,
         }
     }
@@ -152,7 +152,7 @@ impl Storage {
             };
             data.add_expiry(expiry);
             self.expiry
-                .insert(key.clone(), SystemTime::now().checked_add(expiry).unwrap());
+                .insert(key.clone(), data.creation_time.checked_add(expiry).unwrap());
         }
         if should_insert {
             self.store.insert(key, data);
@@ -172,7 +172,7 @@ impl Storage {
         match self.store.get(&key) {
             Some(StorageData {
                 value: StorageValue::String(v),
-                // creation_time: _,
+                creation_time: _,
                 expiry: _,
             }) => return Ok(Some(v.to_owned())),
             None => return Ok(None),
