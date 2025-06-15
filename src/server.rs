@@ -33,14 +33,14 @@ impl Server {
 pub async fn run_server(mut server: Server, mut crx: mpsc::Receiver<ConnectionMessage>) {
     loop {
         tokio::select! {
-                    Some(message) = crx.recv() => {
-        match  message {
-            ConnectionMessage::Request(request) =>{
-                process_request(request, &mut server).await;
+        Some(message) = crx.recv() => {
+            match message {
+                ConnectionMessage::Request(request) => {
+                    process_request(request, &mut server).await;
+                }
             }
         }
-                    }
-                }
+            }
     }
 }
 

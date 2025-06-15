@@ -57,52 +57,53 @@ async fn handle_connection(mut stream: TcpStream, server_sender: mpsc::Sender<Co
 
     loop {
         select! {
-        result =  stream.read(&mut buffer) => {
-            match result {
-            Ok(size) if size != 0 => {
-                let mut index = 0;
+            result = stream.read(&mut buffer) => {
+                match result {
+                    Ok(size) if size != 0 => {
+                        let mut index = 0;
 
-                let resp = match bytes_to_resp(&buffer[..size].to_vec(), &mut index) {
-                    Ok(v) => v,
-                    Err(e) => {
-                        eprintln!("Error {}", e);
-                        return;
-                    }
-                };
-                eprintln!("resp {:?}", resp);
-                let request = Request {
-                    value: resp,
-                    sender: connection_sender.clone()
-                };
-
-                let connection_message = ConnectionMessage::Request(request);
-                match server_sender.send(connection_message).await {
-                    Ok(()) => {},
-                    Err(e) =>{
-                        eprintln!("Error sending request:{}",e);
-                        return;
-                    }
-                }
-            }
-            Ok(_) => {
-                eprintln!("Connection Closed");
-                break;
-            }
-            Err(e) => {
-                eprintln!("err ={}", e);
-                break;
-            }
-                    }        }
-                 Some(response) = connection_receiver.recv() => {
-                                let _ = match response {
-                                    ServerMessage::Data(v) => stream.write_all(v.to_string().as_bytes()).await,
-                                    ServerMessage::Error(e) =>{
-                                        eprintln!("Error:{}",ConnectionError::ServerError(e));
-                                        return;
-                                    }
-                                };
-                }
+                        let resp = match bytes_to_resp(&buffer[..size].to_vec(), &mut index) {
+                            Ok(v) => v,
+                            Err(e) => {
+                                eprintln!("Error {}", e);
+                                return;
                             }
+                        };
+                        eprintln!("resp {:?}", resp);
+                        let request = Request {
+                            value: resp,
+                            sender: connection_sender.clone()
+                        };
+
+                        let connection_message = ConnectionMessage::Request(request);
+                        match server_sender.send(connection_message).await {
+                            Ok(()) => {},
+                            Err(e) => {
+                                eprintln!("Error sending request: {}", e);
+                                return;
+                            }
+                        }
+                    }
+                    Ok(_) => {
+                        eprintln!("Connection Closed");
+                        break;
+                    }
+                    Err(e) => {
+                        eprintln!("err ={}", e);
+                        break;
+                    }
+                }
+            }
+            Some(response) = connection_receiver.recv() => {
+                let _ = match response {
+                    ServerMessage::Data(v) => stream.write_all(v.to_string().as_bytes()).await,
+                    ServerMessage::Error(e) => {
+                        eprintln!("Error: {}", ConnectionError::ServerError(e));
+                        return;
+                    }
+                };
+            }
+        }
     }
 }
 
