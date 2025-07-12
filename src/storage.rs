@@ -86,7 +86,7 @@ impl Storage {
         let mut data = StorageData::from(value);
         let mut should_insert = true;
 
-        let key_present = self.store.get(&key).is_some();
+        let key_present = self.store.contains_key(&key);
 
         if let Some(value) = args.existence {
             match value {

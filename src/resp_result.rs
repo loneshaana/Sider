@@ -17,7 +17,7 @@ pub type RESPLength = i32;
 impl fmt::Display for RESPError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            RESPError::OutOfBounds(index) => write!(f, "Out of bounds at index {}", index),
+            RESPError::OutOfBounds(index) => write!(f, "Out of bounds at index {index}"),
             RESPError::FromUtf8 => write!(f, "Cannot convert from UTF-8"),
             RESPError::WrongType => write!(f, "Wrong prefix for RESP type"),
             RESPError::Unknown => write!(f, "Unknown format of RESP string"),

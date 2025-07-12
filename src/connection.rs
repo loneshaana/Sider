@@ -63,7 +63,7 @@ pub async fn handle_connection(
                         match server_sender.send(connection_message).await {
                             Ok(()) => {},
                             Err(e) => {
-                                eprintln!("Error sending request: {}", e);
+                                eprintln!("Error sending request: {e}");
                                 return;
                             }
                         }

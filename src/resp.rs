@@ -21,11 +21,11 @@ impl fmt::Display for RESP {
                 }
                 output
             }
-            Self::SimpleString(data) => format!("+{}\r\n", data),
-            Self::BulkString(data) => format!("${}\r\n{}\r\n", data.len(), data),
+            Self::SimpleString(data) => format!("+{data}\r\n"),
+            Self::BulkString(data) => format!("${}\r\n{data}\r\n", data.len()),
             Self::Null => String::from("$-1\r\n"),
         };
-        write!(f, "{}", data)
+        write!(f, "{data}")
     }
 }
 
@@ -43,7 +43,7 @@ fn binary_extract_line(buffer: &[u8], index: &mut usize) -> RESPResult<Vec<u8>> 
         *index = buffer.len();
         return Err(RESPError::OutOfBounds(*index));
     }
-    let mut previous_elem: u8 = buffer[*index].clone();
+    let mut previous_elem: u8 = buffer[*index];
     let mut separator_found: bool = false;
     let mut final_index: usize = *index;
 
@@ -54,7 +54,7 @@ fn binary_extract_line(buffer: &[u8], index: &mut usize) -> RESPResult<Vec<u8>> 
             separator_found = true;
             break;
         }
-        previous_elem = elem.clone();
+        previous_elem = elem;
     }
     // If the previous element is not \n
     // we are out of bounds
@@ -89,7 +89,7 @@ fn binary_extract_bytes(buffer: &[u8], index: &mut usize, length: usize) -> RESP
     // update the index
     *index += length;
 
-    return Ok(output);
+    Ok(output)
 }
 
 pub fn resp_remove_type(value: char, buffer: &[u8], index: &mut usize) -> RESPResult<()> {
@@ -104,7 +104,7 @@ pub fn resp_remove_type(value: char, buffer: &[u8], index: &mut usize) -> RESPRe
 pub fn resp_extract_length(buffer: &[u8], index: &mut usize) -> RESPResult<RESPLength> {
     let line = binary_extract_line_as_string(buffer, index)?;
     let length: RESPLength = line.parse()?;
-    return Ok(length);
+    Ok(length)
 }
 
 // Parse a simple string in the form `+VALUE\r\n`
@@ -173,7 +173,7 @@ fn parser_router(
 
 pub fn bytes_to_resp(buffer: &[u8], index: &mut usize) -> RESPResult<RESP> {
     match parser_router(buffer, index) {
-        Some(parse_func) => return parse_func(buffer, index),
+        Some(parse_func) => parse_func(buffer, index),
         _ => Err(RESPError::Unknown),
     }
 }
