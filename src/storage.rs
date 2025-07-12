@@ -86,10 +86,7 @@ impl Storage {
         let mut data = StorageData::from(value);
         let mut should_insert = true;
 
-        let key_present = match self.store.get(&key) {
-            None => false,
-            _ => true,
-        };
+        let key_present = self.store.get(&key).is_some();
 
         if let Some(value) = args.existence {
             match value {
@@ -117,7 +114,7 @@ impl Storage {
             self.store.insert(key, data);
             return Ok(String::from("OK"));
         }
-        Ok(format!("Key is present {}", key_present))
+        Ok(format!("Key is present {key_present}"))
     }
 
     pub fn get(&mut self, key: String) -> StorageResult<Option<String>> {
@@ -133,8 +130,8 @@ impl Storage {
                 value: StorageValue::String(v),
                 creation_time: _,
                 expiry: _,
-            }) => return Ok(Some(v.to_owned())),
-            None => return Ok(None),
+            }) => Ok(Some(v.to_owned())),
+            None => Ok(None),
         }
     }
 }

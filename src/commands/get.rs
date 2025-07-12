@@ -5,7 +5,7 @@ use crate::{
     server_result::{ServerError, ServerValue},
 };
 
-pub async fn command(server: &mut Server, request: &Request, command: &Vec<String>) {
+pub async fn command(server: &mut Server, request: &Request, command: &[String]) {
     let storage = match server.storage.as_mut() {
         Some(storage) => storage,
         None => {

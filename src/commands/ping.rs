@@ -1,6 +1,6 @@
 use crate::{request::Request, resp::RESP, server::Server, server_result::ServerValue};
 
-pub async fn command(_server: &Server, request: &Request, _command: &Vec<String>) {
+pub async fn command(_server: &Server, request: &Request, _command: &[String]) {
     request
         .data(ServerValue::RESP(RESP::SimpleString("PONG".to_string())))
         .await;

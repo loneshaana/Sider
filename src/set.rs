@@ -29,7 +29,7 @@ impl SetArgs {
     }
 }
 
-pub fn parse_set_arguments(arguments: &Vec<String>) -> StorageResult<SetArgs> {
+pub fn parse_set_arguments(arguments: &[String]) -> StorageResult<SetArgs> {
     let mut args = SetArgs::new();
     let mut idx: usize = 0;
     loop {

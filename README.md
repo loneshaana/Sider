@@ -2,7 +2,7 @@
 Sider is the Rust implementation of the Redis server. It is designed to be a high-performance, lightweight. The reverse of Redis is Sider. 
 
 ## Features
-- Impementation of RESP Protocol
+- Implementation of RESP Protocol
 
 
 ## Supported Commands

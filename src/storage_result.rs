@@ -15,13 +15,13 @@ impl fmt::Display for StorageError {
                 write!(f, "the client sent and incorrect request!")
             }
             StorageError::CommandNotAvailable(c) => {
-                write!(f, "the requested command {} is not available", c)
+                write!(f, "the requested command {c} is not available")
             }
             StorageError::CommandSyntaxError(c) => {
-                write!(f, "syntax error while processing {}", c)
+                write!(f, "syntax error while processing {c}")
             }
             StorageError::CommandInternalError(c) => {
-                write!(f, "internal error while processing {}", c)
+                write!(f, "internal error while processing {c}")
             }
         }
     }

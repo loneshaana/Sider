@@ -26,7 +26,7 @@ impl fmt::Display for ConnectionError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             ConnectionError::ServerError(e) => {
-                write!(f, "{}", format!("Server error:{}", e))
+                write!(f, "Server error:{e}")
             }
         }
     }
@@ -46,14 +46,14 @@ pub async fn handle_connection(
                     Ok(size) if size != 0 => {
                         let mut index = 0;
 
-                        let resp = match bytes_to_resp(&buffer[..size].to_vec(), &mut index) {
+                        let resp = match bytes_to_resp(&buffer[..size], &mut index) {
                             Ok(v) => v,
                             Err(e) => {
-                                eprintln!("Error {}", e);
+                                eprintln!("Error {e}");
                                 return;
                             }
                         };
-                        eprintln!("resp {:?}", resp);
+                        eprintln!("resp {resp:?}");
                         let request = Request {
                             value: resp,
                             sender: connection_sender.clone()
@@ -73,7 +73,7 @@ pub async fn handle_connection(
                         break;
                     }
                     Err(e) => {
-                        eprintln!("err ={}", e);
+                        eprintln!("err ={e}");
                         break;
                     }
                 }
@@ -92,7 +92,7 @@ pub async fn handle_connection(
 }
 
 pub async fn run_listner(host: String, port: u16, server_sender: mpsc::Sender<ConnectionMessage>) {
-    let listner = TcpListener::bind(format!("{}:{}", host, port))
+    let listner = TcpListener::bind(format!("{host}:{port}"))
         .await
         .unwrap();
 
@@ -104,7 +104,7 @@ pub async fn run_listner(host: String, port: u16, server_sender: mpsc::Sender<Co
                         tokio::spawn(handle_connection(stream, server_sender.clone()));
                     }
                     Err(e) =>{
-                        eprintln!("Error: {}",e);
+                        eprintln!("Error: {e}");
                         continue;
                     }
                 }

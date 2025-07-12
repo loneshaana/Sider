@@ -7,8 +7,8 @@ use crate::{
     connection::ConnectionMessage,
     request::Request,
     resp::RESP,
-    server_result::{ServerError, ServerValue},
-    storage::{self, Storage},
+    server_result::ServerError,
+    storage::Storage,
 };
 
 pub struct Server {
@@ -16,6 +16,7 @@ pub struct Server {
 }
 
 impl Server {
+    #[allow(dead_code)]
     pub fn new() -> Self {
         Self { storage: None }
     }
@@ -26,6 +27,7 @@ impl Server {
         }
     }
 
+    #[allow(dead_code)]
     pub fn set_storage(&mut self, storage: Storage) {
         self.storage = Some(storage);
     }
@@ -98,7 +100,7 @@ pub async fn process_request(request: Request, server: &mut Server) {
 
 #[cfg(test)]
 mod tests {
-    use crate::server_result::ServerMessage;
+    use crate::server_result::{ServerMessage, ServerValue};
     use tokio::sync::mpsc;
 
     use super::*;
