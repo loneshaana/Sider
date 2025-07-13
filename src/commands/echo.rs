@@ -1,7 +1,7 @@
 use crate::server_result::ServerValue;
 use crate::{request::Request, resp::RESP, server::Server};
 
-pub async fn command(_server: &Server, request: &Request, command: &Vec<String>) {
+pub async fn command(_server: &Server, request: &Request, command: &[String]) {
     request
         .data(ServerValue::RESP(RESP::BulkString(command[1].clone())))
         .await;

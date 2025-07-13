@@ -6,7 +6,7 @@ use crate::{
     set::parse_set_arguments,
 };
 
-pub async fn command(server: &mut Server, request: &Request, command: &Vec<String>) {
+pub async fn command(server: &mut Server, request: &Request, command: &[String]) {
     let storage = match server.storage.as_mut() {
         Some(storage) => storage,
         None => {
@@ -23,7 +23,7 @@ pub async fn command(server: &mut Server, request: &Request, command: &Vec<Strin
     }
     let key = command[1].clone();
     let value = command[2].clone();
-    let args = match parse_set_arguments(&command[3..].to_vec()) {
+    let args = match parse_set_arguments(&command[3..]) {
         Ok(args) => args,
         Err(_) => {
             request
@@ -33,7 +33,7 @@ pub async fn command(server: &mut Server, request: &Request, command: &Vec<Strin
         }
     };
 
-    if let Err(_) = storage.set(key, value, args) {
+    if storage.set(key, value, args).is_err() {
         request
             .error(ServerError::CommandInternalError(command.join(" ")))
             .await;

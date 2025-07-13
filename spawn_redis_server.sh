@@ -1,5 +1,6 @@
+#!/bin/bash
 exec cargo run \
 --quiet \
 --release \
---manifest-path $(dirname $0)/Cargo.toml \
--- "$@
+--manifest-path "$(dirname "$0")/Cargo.toml" \
+-- "$@"
